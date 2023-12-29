@@ -74,11 +74,6 @@ resource "aws_instance" "web" {
     destination = "/tmp/grafana.repo"
   }
 
-  provisioner "file" {
-    source      = "node_exporter.service"
-    destination = "/tmp/node_exporter.service"
-  }
-
   provisioner "remote-exec" {
     inline = [
       "sudo yum update -y",
@@ -94,7 +89,7 @@ resource "aws_instance" "web" {
       "sudo mv prometheus.yml /etc/prometheus",
       "sudo chown -R prometheus:prometheus /etc/prometheus/ /data/",
       "sudo mv prometheus promtool /usr/local/bin/",
-      "sudo chown prometheus:prometheus /usr/local/bin/prometheus",
+      "sudo chown -R prometheus:prometheus /usr/local/bin/prometheus",
       "sudo mv /tmp/prometheus.service /etc/systemd/system/",
       "sudo systemctl daemon-reload",
       "sudo systemctl enable prometheus",
@@ -103,15 +98,7 @@ resource "aws_instance" "web" {
       "sudo yum install grafana -y",
       "sudo systemctl daemon-reload",
       "sudo systemctl enable grafana-server",
-      "sudo systemctl start grafana-server",
-      "sudo useradd --no-create-home --shell /bin/false node_exporter",
-      "wget https://github.com/prometheus/node_exporter/releases/download/v1.6.1/node_exporter-1.6.1.linux-amd64.tar.gz",
-      "tar -xvf node_exporter-1.6.1.linux-amd64.tar.gz",
-      "sudo mv node_exporter-1.6.1.linux-amd64/node_exporter /usr/local/bin/",
-      "rm -rf node_exporter*",
-      "sudo mv /tmp/node_exporter.service /etc/systemd/system/",
-      "sudo systemctl enable node_exporter",
-      "sudo systemctl start node_exporter"
+      "sudo systemctl start grafana-server"
     ]
   }
 
