@@ -1,5 +1,0 @@
-ami           = "ami-0e8a34246278c21e4"
-instance_type = "t2.medium"
-subnet_id     = "subnet-04258cda49e304a37"
-key_pair      = "monitoring-server-key"
-vpc_id        = "vpc-06fe4f366ed34013b"
