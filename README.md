@@ -131,6 +131,87 @@ pipeline {
 }
 ```
 
+## Step 7: Create an EKS Cluster using Terraform 
+
+Prerequisite: Install kubectl and helm before executing the commands below 
+
+## Step 8: Deploy Prometheus and Grafana on EKS 
+
+In order to access the cluster use the command below:
+
+```
+aws eks update-kubeconfig --name "Cluster-Name" --region "Region-of-operation"
+```
+
+1. We need to add the Helm Stable Charts for your local.
+
+```bash
+helm repo add stable https://charts.helm.sh/stable
+```
+
+2. Add prometheus Helm repo
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+```
+
+3. Create Prometheus namespace
+
+```bash
+kubectl create namespace prometheus
+```
+
+4. Install kube-prometheus stack
+
+```bash
+helm install stable prometheus-community/kube-prometheus-stack -n prometheus
+```
+
+5. Edit the service and make it LoadBalancer
+
+```
+kubectl edit svc stable-kube-prometheus-sta-prometheus -n prometheus
+```
+
+6. Edit the grafana service too to change it to LoadBalancer
+
+```
+kubectl edit svc stable-grafana -n prometheus
+```
+
+## Step 9: Deploy ArgoCD on EKS to fetch the manifest files to the cluster
+
+1. Create a namespace argocd
+```
+kubectl create namespace argocd
+```
+
+2. Add argocd repo locally
+```
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.4.7/manifests/install.yaml
+```
+
+3. By default, argocd-server is not publically exposed. In this scenario, we will use a Load Balancer to make it usable:
+```
+kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
+```
+
+4. We get the load balancer hostname using the command below:
+```
+kubectl get svc argocd-server -n argocd -o json
+```
+
+5. Once you get the load balancer hostname details, you can access the ArgoCD dashboard through it.
+
+6. We need to enter the Username and Password for ArgoCD. The username will be admin by default. For the password, we need to run the command below:
+```
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
+
+
+
+
+
 
 
 
