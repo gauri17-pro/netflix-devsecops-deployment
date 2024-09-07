@@ -45,7 +45,92 @@ Add URL of SonarQube and for the credential select the one added in step 2.
 
 1. Go to Manage Jenkins -> Tools -> Docker Installations -> Install automatically
 
-And then go to Manage Jenkins -> Credentials -> System -> Global Credentials -> Add credentials. Add username and password. 
+2. And then go to Manage Jenkins -> Credentials -> System -> Global Credentials -> Add credentials. Add username and password for the docker registry (You need to create an account on Dockerhub). 
+
+## Step 6: Create a pipeline in order to build and push the dockerized image securely using multiple security tools
+
+Go to Dashboard -> New Item -> Pipeline 
+
+Use the code below for the Jenkins pipeline. 
+
+```bash
+pipeline {
+    agent any
+    environment {
+        SCANNER_HOME = tool 'sonar-scanner'
+    }
+    stages {
+        stage('clean workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        stage('Checkout from Git') {
+            steps {
+                git branch: 'main', url: 'https://github.com/gauri17-pro/netflix-clone-kubernetes.git'
+            }
+        }
+        stage("Sonarqube Analysis") {
+            steps {
+                withSonarQubeEnv('sonar-server') {
+                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Netflix \
+                    -Dsonar.projectKey=Netflix'''
+                }
+            }
+        }
+        stage("quality gate") {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar'
+                }
+            }
+        }
+        stage('OWASP FS SCAN') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'OWASP-DPCheck'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('TRIVY FS SCAN') {
+            steps {
+                script {
+                    try {
+                        sh "trivy fs . > trivyfs.txt" 
+                    }catch(Exception e){
+                        input(message: "Are you sure to proceed?", ok: "Proceed")
+                    }
+                }
+            }
+        }
+        stage("Docker Build Image"){
+            steps{
+                   
+                sh "docker build --build-arg API_KEY=<tmdb_api_key> -t netflix ."
+                }
+            }
+        }
+        stage("TRIVY"){
+            steps{
+                sh "trivy image gauris17/netflix:latest > trivyimage.txt"
+                script{
+                    input(message: "Are you sure to proceed?", ok: "Proceed")
+            }
+        }
+        stage("Docker Push"){
+            steps{
+                script {
+                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){   
+                    sh "docker tag netflix gauris17/netflix:latest "
+                    sh "docker push gauris17/netflix:latest"
+                    }
+                }
+            }
+        }
+    }
+
+}
+```
+
 
 
 
