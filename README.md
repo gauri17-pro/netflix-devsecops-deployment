@@ -112,7 +112,7 @@ pipeline {
         stage("Docker Push"){
             steps{
                 script {
-                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){   
+                    withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker'){   
                     sh "docker tag netflix gauris17/netflix:latest "
                     sh "docker push gauris17/netflix:latest"
                     }
