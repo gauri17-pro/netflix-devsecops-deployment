@@ -67,7 +67,7 @@ pipeline {
         }
         stage('Checkout from Git') {
             steps {
-                git branch: 'main', url: 'https://github.com/gauri17-pro/netflix-clone-kubernetes.git'
+                git branch: 'main', url: 'https://github.com/gauri17-pro/nextflix.git'
             }
         }
         stage("Sonarqube Analysis") {
@@ -78,16 +78,9 @@ pipeline {
                 }
             }
         }
-        stage("quality gate") {
-            steps {
-                script {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar'
-                }
-            }
-        }
         stage('OWASP FS SCAN') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'OWASP-DPCheck'
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'OWASP DP-Check'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
@@ -105,15 +98,15 @@ pipeline {
         stage("Docker Build Image"){
             steps{
                    
-                sh "docker build --build-arg API_KEY=<tmdb_api_key> -t netflix ."
-                }
+                sh "docker build --build-arg API_KEY=2af0904de8242d48e8527eeedc3e19d9 -t netflix ."
             }
         }
         stage("TRIVY"){
             steps{
-                sh "trivy image gauris17/netflix:latest > trivyimage.txt"
+                sh "trivy image netflix > trivyimage.txt"
                 script{
                     input(message: "Are you sure to proceed?", ok: "Proceed")
+                }
             }
         }
         stage("Docker Push"){
@@ -127,7 +120,6 @@ pipeline {
             }
         }
     }
-
 }
 ```
 
